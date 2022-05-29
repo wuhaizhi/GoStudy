@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"os"
@@ -64,9 +65,11 @@ func main() {
 		wg.Add(1)
 		eg.Go(func() error {
 			wg.Done()
-			return srv.Start(context.WithValue(ctx, "ServerName", "aaa"))
+			return srv.Start(context.WithValue(ctx, "ServerName", "ServerName"))
 		})
 	}
+
+	wg.Wait()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	eg.Go(func() error {
@@ -74,9 +77,9 @@ func main() {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-			case <-c:
-				fmt.Println("stop app")
-				return fmt.Errorf("stop app")
+			case sig := <-c:
+				fmt.Println("get os signal: %v", sig)
+				return errors.Errorf("get os signal: %v", sig)
 			}
 		}
 	})
